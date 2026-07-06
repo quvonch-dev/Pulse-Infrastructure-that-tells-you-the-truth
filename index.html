@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse — Infrastructure that tells you the truth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A0C10;
+    --panel: #10141B;
+    --panel-line: #1D2530;
+    --teal: #0D2B2E;
+    --amber: #FFB000;
+    --amber-dim: #7A5800;
+    --text: #E8E6E1;
+    --text-dim: #7C8494;
+    --red: #FF4D4D;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Space Grotesk', sans-serif;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--display);
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+
+  .container{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px;
+  }
+
+  /* Background grid texture */
+  .grid-bg{
+    position:fixed;
+    inset:0;
+    background-image:
+      linear-gradient(var(--panel-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--panel-line) 1px, transparent 1px);
+    background-size:64px 64px;
+    opacity:0.25;
+    pointer-events:none;
+    z-index:0;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+  }
+
+  /* ============ NAV ============ */
+  nav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,12,16,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--panel-line);
+  }
+  .nav-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 32px;
+  }
+  .logo{
+    display:flex; align-items:center; gap:10px;
+    font-weight:700; font-size:19px; letter-spacing:-0.02em;
+  }
+  .logo-dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 0 0 rgba(255,176,0,0.6);
+    animation:pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot{
+    0%{ box-shadow:0 0 0 0 rgba(255,176,0,0.5); }
+    70%{ box-shadow:0 0 0 8px rgba(255,176,0,0); }
+    100%{ box-shadow:0 0 0 0 rgba(255,176,0,0); }
+  }
+  .nav-links{
+    display:flex; gap:36px;
+    font-family:var(--mono); font-size:13px;
+    color:var(--text-dim);
+  }
+  .nav-links a:hover{ color:var(--text); }
+  .nav-cta{
+    font-family:var(--mono); font-size:13px;
+    border:1px solid var(--panel-line);
+    padding:9px 18px; border-radius:2px;
+    color:var(--text);
+    transition:border-color .2s, background .2s;
+  }
+  .nav-cta:hover{ border-color:var(--amber); background:rgba(255,176,0,0.06); }
+
+  @media (max-width:800px){
+    .nav-links{ display:none; }
+  }
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;
+    padding:100px 32px 60px;
+    z-index:1;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:60px;
+    align-items:center;
+  }
+  @media (max-width:900px){
+    .hero-grid{ grid-template-columns:1fr; }
+  }
+
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px;
+    color:var(--amber);
+    border:1px solid var(--amber-dim);
+    background:rgba(255,176,0,0.05);
+    padding:6px 12px; border-radius:2px;
+    margin-bottom:24px;
+  }
+
+  h1{
+    font-size:clamp(38px, 5vw, 60px);
+    font-weight:700;
+    letter-spacing:-0.03em;
+    line-height:1.05;
+    margin-bottom:22px;
+  }
+  h1 span{ color:var(--amber); }
+
+  .hero-sub{
+    font-size:17px;
+    color:var(--text-dim);
+    max-width:480px;
+    margin-bottom:36px;
+  }
+
+  .hero-ctas{ display:flex; gap:14px; flex-wrap:wrap; }
+  .btn-primary{
+    background:var(--amber);
+    color:#141008;
+    font-family:var(--mono); font-weight:600; font-size:14px;
+    padding:14px 26px; border-radius:2px;
+    transition:transform .15s, box-shadow .15s;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 4px 20px rgba(255,176,0,0.25); }
+  .btn-secondary{
+    border:1px solid var(--panel-line);
+    font-family:var(--mono); font-size:14px;
+    padding:14px 26px; border-radius:2px;
+    color:var(--text);
+    transition:border-color .15s;
+  }
+  .btn-secondary:hover{ border-color:var(--text-dim); }
+
+  .hero-meta{
+    margin-top:28px;
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+  }
+
+  /* Scope panel - the signature element */
+  .scope-panel{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    overflow:hidden;
+    position:relative;
+  }
+  .scope-header{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--panel-line);
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+  }
+  .scope-header .status{
+    color:var(--amber);
+    display:flex; align-items:center; gap:6px;
+  }
+  .status-led{
+    width:6px; height:6px; border-radius:50%; background:var(--amber);
+  }
+  .scope-body{
+    padding:0;
+    position:relative;
+    background:
+      linear-gradient(rgba(255,176,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,176,0,0.04) 1px, transparent 1px);
+    background-size:24px 24px;
+  }
+  .scope-svg{ display:block; width:100%; height:220px; }
+
+  .scope-readout{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    border-top:1px solid var(--panel-line);
+  }
+  .readout-cell{
+    padding:16px 18px;
+    border-right:1px solid var(--panel-line);
+  }
+  .readout-cell:last-child{ border-right:none; }
+  .readout-label{
+    font-family:var(--mono); font-size:10px; color:var(--text-dim);
+    text-transform:uppercase; letter-spacing:0.08em;
+    margin-bottom:6px;
+  }
+  .readout-value{
+    font-family:var(--mono); font-size:20px; font-weight:600;
+  }
+  .readout-value.amber{ color:var(--amber); }
+
+  /* ============ LOGOS STRIP ============ */
+  .logos-strip{
+    border-top:1px solid var(--panel-line);
+    border-bottom:1px solid var(--panel-line);
+    padding:28px 32px;
+  }
+  .logos-inner{
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:20px;
+    font-family:var(--mono); font-size:13px; color:var(--text-dim);
+  }
+  .logos-inner span.tag{
+    color:var(--text-dim); font-size:11px;
+    text-transform:uppercase; letter-spacing:0.1em;
+  }
+
+  /* ============ FEATURES ============ */
+  .section{ padding:110px 32px; position:relative; z-index:1; }
+  .section-head{ max-width:600px; margin-bottom:64px; }
+  .section-tag{
+    font-family:var(--mono); font-size:12px; color:var(--amber);
+    margin-bottom:16px; display:block;
+  }
+  h2{
+    font-size:clamp(28px, 3.5vw, 40px);
+    font-weight:700; letter-spacing:-0.02em;
+    margin-bottom:16px;
+  }
+  .section-desc{ color:var(--text-dim); font-size:16px; max-width:520px; }
+
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1px;
+    background:var(--panel-line);
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  @media (max-width:820px){
+    .feature-grid{ grid-template-columns:1fr; }
+  }
+  .feature-card{
+    background:var(--panel);
+    padding:32px;
+    transition:background .2s;
+  }
+  .feature-card:hover{ background:#141922; }
+  .feature-icon{
+    width:36px; height:36px;
+    margin-bottom:20px;
+  }
+  .feature-card h3{
+    font-size:18px; font-weight:600; margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+  .feature-card p{ color:var(--text-dim); font-size:14px; line-height:1.6; }
+
+  /* ============ SIGNAL LOG (how it works) ============ */
+  .log-section{
+    background:var(--panel);
+    border-top:1px solid var(--panel-line);
+    border-bottom:1px solid var(--panel-line);
+  }
+  .log-console{
+    font-family:var(--mono); font-size:13px;
+    background:#0D1016;
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    padding:0;
+    overflow:hidden;
+  }
+  .log-console-head{
+    display:flex; gap:6px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--panel-line);
+  }
+  .log-console-head span{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--panel-line);
+  }
+  .log-line{
+    padding:11px 20px;
+    border-bottom:1px solid #171b23;
+    display:flex; gap:16px;
+    color:var(--text-dim);
+  }
+  .log-line:last-child{ border-bottom:none; }
+  .log-time{ color:#4A5162; flex-shrink:0; }
+  .log-ok{ color:var(--amber); }
+  .log-line strong{ color:var(--text); font-weight:500; }
+
+  /* ============ STATS ============ */
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:1px;
+    background:var(--panel-line);
+    border:1px solid var(--panel-line);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  @media (max-width:800px){
+    .stats-grid{ grid-template-columns:repeat(2, 1fr); }
+  }
+  .stat-cell{
+    background:var(--bg);
+    padding:36px 28px;
+  }
+  .stat-value{
+    font-family:var(--mono); font-size:36px; font-weight:600;
+    color:var(--amber);
+    margin-bottom:8px;
+  }
+  .stat-label{
+    font-size:13px; color:var(--text-dim);
+  }
+
+  /* ============ CTA ============ */
+  .cta-section{
+    text-align:center;
+    padding:130px 32px;
+    position:relative;
+    z-index:1;
+  }
+  .cta-section h2{ font-size:clamp(30px, 4vw, 46px); margin-bottom:20px; }
+  .cta-section p{ color:var(--text-dim); margin-bottom:36px; }
+  .cta-section .hero-ctas{ justify-content:center; }
+
+  /* ============ FOOTER ============ */
+  footer{
+    border-top:1px solid var(--panel-line);
+    padding:40px 32px;
+  }
+  .footer-inner{
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:16px;
+    font-family:var(--mono); font-size:12px; color:var(--text-dim);
+  }
+  .footer-links{ display:flex; gap:24px; }
+  .footer-links a:hover{ color:var(--text); }
+
+  @media (prefers-reduced-motion: reduce){
+    .logo-dot, .pulse-path, .status-led{ animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="nav-inner">
+    <div class="logo"><span class="logo-dot"></span>PULSE</div>
+    <div class="nav-links">
+      <a href="#features">Signals</a>
+      <a href="#how">How it works</a>
+      <a href="#stats">Reliability</a>
+    </div>
+    <a href="#cta" class="nav-cta">Get API key →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="eyebrow"><span class="status-led" style="width:6px;height:6px;"></span> STATUS: ALL SYSTEMS NOMINAL</div>
+      <h1>Know your infrastructure<br>is lying <span>before it costs you.</span></h1>
+      <p class="hero-sub">Pulse watches every service, queue, and dependency in your stack and tells you the truth in under 400ms — no dashboards to babysit, no alerts you learn to ignore.</p>
+      <div class="hero-ctas">
+        <a href="#cta" class="btn-primary">Start monitoring →</a>
+        <a href="#how" class="btn-secondary">See how it works</a>
+      </div>
+      <div class="hero-meta">$ curl -s pulse.dev/install | sh &nbsp;·&nbsp; 5-minute setup &nbsp;·&nbsp; no credit card</div>
+    </div>
+
+    <div class="scope-panel">
+      <div class="scope-header">
+        <span>api-gateway-prod-03</span>
+        <span class="status"><span class="status-led"></span>LIVE</span>
+      </div>
+      <div class="scope-body">
+        <svg class="scope-svg" viewBox="0 0 500 220" preserveAspectRatio="none">
+          <polyline class="pulse-path" fill="none" stroke="#FFB000" stroke-width="2"
+            points="0,110 40,110 55,110 65,60 75,160 85,110 130,110 145,108 160,112 175,110 220,110 235,109 250,111 265,40 275,180 285,110 330,110 345,110 360,110 375,110 420,110 435,105 450,115 465,110 500,110">
+            <animate attributeName="points"
+              values="
+                0,110 40,110 55,110 65,60 75,160 85,110 130,110 145,108 160,112 175,110 220,110 235,109 250,111 265,40 275,180 285,110 330,110 345,110 360,110 375,110 420,110 435,105 450,115 465,110 500,110;
+                0,110 40,110 55,109 65,111 75,110 85,60 130,180 145,108 160,112 175,110 220,110 235,109 250,111 265,110 275,110 285,45 330,175 345,110 360,110 375,110 420,110 435,60 450,160 465,110 500,110;
+                0,110 40,110 55,110 65,60 75,160 85,110 130,110 145,108 160,112 175,110 220,110 235,109 250,111 265,40 275,180 285,110 330,110 345,110 360,110 375,110 420,110 435,105 450,115 465,110 500,110"
+              dur="4s" repeatCount="indefinite" />
+          </polyline>
+          <line x1="0" y1="110" x2="500" y2="110" stroke="#1D2530" stroke-width="1" stroke-dasharray="4 4"/>
+        </svg>
+      </div>
+      <div class="scope-readout">
+        <div class="readout-cell">
+          <div class="readout-label">Uptime 90d</div>
+          <div class="readout-value amber">99.982%</div>
+        </div>
+        <div class="readout-cell">
+          <div class="readout-label">p99 latency</div>
+          <div class="readout-value">184ms</div>
+        </div>
+        <div class="readout-cell">
+          <div class="readout-label">Open signals</div>
+          <div class="readout-value">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="logos-strip">
+  <div class="container logos-inner">
+    <span class="tag">Watching production at</span>
+    <span>Northwind</span>
+    <span>Ferrovia</span>
+    <span>Deskhop</span>
+    <span>Coldline</span>
+    <span>Marrow Labs</span>
+  </div>
+</div>
+
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-tag">// 03 SIGNAL TYPES</span>
+      <h2>Three ways things go quiet before they go wrong.</h2>
+      <p class="section-desc">Most outages announce themselves early — in latency, in error rate, in silence. Pulse is built to hear each one.</p>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none"><path d="M2 18h6l4-12 8 24 4-12h10" stroke="#FFB000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Heartbeat checks</h3>
+        <p>Every endpoint, queue, and cron job pinged on the interval that matches its risk — seconds for payments, minutes for batch jobs.</p>
+      </div>
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="#FFB000" stroke-width="2"/><path d="M18 10v8l6 4" stroke="#FFB000" stroke-width="2" stroke-linecap="round"/></svg>
+        <h3>Drift detection</h3>
+        <p>Pulse learns each service's normal shape and flags the slow creep in latency or error rate that thresholds miss entirely.</p>
+      </div>
+      <div class="feature-card">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none"><path d="M6 30V16M18 30V6M30 30v-9" stroke="#FFB000" stroke-width="2" stroke-linecap="round"/></svg>
+        <h3>Dependency mapping</h3>
+        <p>See which downstream failure actually caused the incident, instead of triaging six false alarms from six symptoms of one cause.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="log-section" id="how">
+  <div class="container section" style="padding:110px 0;">
+    <div class="section-head">
+      <span class="section-tag">// HOW IT WORKS</span>
+      <h2>From install to first signal, five minutes.</h2>
+      <p class="section-desc">No agents to configure per-service. One binary, one config file, and Pulse starts listening.</p>
+    </div>
+
+    <div class="log-console">
+      <div class="log-console-head"><span></span><span></span><span></span></div>
+      <div class="log-line"><span class="log-time">00:00:01</span><span><strong>pulse init</strong> — reading pulse.yaml, found 14 targets</span></div>
+      <div class="log-line"><span class="log-time">00:00:02</span><span><strong>pulse connect</strong> — establishing watch on api-gateway-prod-03</span></div>
+      <div class="log-line"><span class="log-time">00:00:04</span><span><strong>pulse baseline</strong> — learning normal latency band (12m sample)</span></div>
+      <div class="log-line"><span class="log-time">00:12:41</span><span class="log-ok">pulse ready</span> — baseline established, drift detection active</span></div>
+      <div class="log-line"><span class="log-time">03:41:09</span><span><strong>pulse alert</strong> — checkout-worker p99 up 340% over 6min baseline</span></div>
+      <div class="log-line"><span class="log-time">03:41:22</span><span class="log-ok">pulse routed</span> — signal sent to #incidents, on-call paged</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="stats">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-tag">// RELIABILITY</span>
+      <h2>Pulse watches itself the same way.</h2>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <div class="stat-value">99.99%</div>
+        <div class="stat-label">Pulse's own uptime, 12mo</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value">380ms</div>
+        <div class="stat-label">Median time to first alert</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value">6,200+</div>
+        <div class="stat-label">Services monitored today</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-value">41%</div>
+        <div class="stat-label">Fewer false-positive pages</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section" id="cta">
+  <div class="container">
+    <span class="section-tag">// GET STARTED</span>
+    <h2>Stop finding out from your users.</h2>
+    <p>Free for the first 5 services, no card required.</p>
+    <div class="hero-ctas">
+      <a href="#" class="btn-primary">Get your API key →</a>
+      <a href="#" class="btn-secondary">Read the docs</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-inner">
+    <span>© 2026 PULSE MONITORING INC.</span>
+    <div class="footer-links">
+      <a href="#">Status</a>
+      <a href="#">Docs</a>
+      <a href="#">GitHub</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
